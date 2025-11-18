@@ -17,7 +17,7 @@ $config = require __DIR__ . '/../config.php';
       <ul class="navbar-nav ms-auto">
         <?php if (!empty($_SESSION['user'])): ?>
           <li class="nav-item"><a class="nav-link" href="/?p=rooms">Ruangan</a></li>
-          <li class="nav-item"><a class="nav-link" href="/?p=logout">Logout</a></li>
+          <li class="nav-item"><a class="nav-link" href="../app/views/logout.php">Logout</a></li>
         <?php else: ?>
           <li class="nav-item"><a class="nav-link" href="../app/views/login.php">Login</a></li>
           <li class="nav-item"><a class="nav-link" href="../app/views/register.php">daftar</a></li>
@@ -26,18 +26,6 @@ $config = require __DIR__ . '/../config.php';
     </div>
   </div>
 </nav>
-
-<div class="container mt-4" id="flash-container">
-  <?php if ($msg = flash('success')): ?>
-    <div class="alert alert-success alert-dismissible fade show" role="alert"><?= e($msg) ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-  <?php endif; ?>
-  <?php if ($errs = flash('errors')): ?>
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-      <?php foreach($errs as $k=>$v) echo '<div>'.e($v).'</div>'; ?>
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-  <?php endif; ?>
-</div>
 
 <?= $content ?? '' ?>
 

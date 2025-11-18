@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <div class="auth-container">
     <div class="auth-card">
       <h2>Masuk ke Akun</h2>
-      <form action="proses_login.php" method="POST">
+      <form action="login.php" method="POST">
         <label for="email">Email</label>
         <input type="email" id="email" name="email" placeholder="Masukkan email kamu" required>
 
