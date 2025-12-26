@@ -106,18 +106,22 @@ function handleUpdateRoom() {
     }
     
     // Update room data
+    $latitude = !empty($_POST['latitude']) ? $_POST['latitude'] : null;
+    $longitude = !empty($_POST['longitude']) ? $_POST['longitude'] : null;
+
     if ($image) {
-        $stmt = $pdo->prepare('UPDATE rooms SET name = ?, code = ?, category_id = ?, capacity = ?, image = ? WHERE id = ?');
-        $stmt->execute([$name, $code, $category_id, $capacity, $image, $id]);
+        $stmt = $pdo->prepare('UPDATE rooms SET name = ?, code = ?, category_id = ?, capacity = ?, image = ?, latitude = ?, longitude = ? WHERE id = ?');
+        $stmt->execute([$name, $code, $category_id, $capacity, $image, $latitude, $longitude, $id]);
     } else {
-        $stmt = $pdo->prepare('UPDATE rooms SET name = ?, code = ?, category_id = ?, capacity = ? WHERE id = ?');
-        $stmt->execute([$name, $code, $category_id, $capacity, $id]);
+        $stmt = $pdo->prepare('UPDATE rooms SET name = ?, code = ?, category_id = ?, capacity = ?, latitude = ?, longitude = ? WHERE id = ?');
+        $stmt->execute([$name, $code, $category_id, $capacity, $latitude, $longitude, $id]);
     }
     
     $_SESSION['flash']['success'] = 'Ruangan ' . e($name) . ' berhasil diperbarui';
     header('Location: index.php');
     exit;
 }
+    
 
 // Function to handle room creation
 function handleCreateRoom() {
@@ -135,8 +139,11 @@ function handleCreateRoom() {
     }
     
     // Insert new room
-    $stmt = $pdo->prepare('INSERT INTO rooms (name, code, category_id, capacity, image) VALUES (?, ?, ?, ?, ?)');
-    $stmt->execute([$name, $code, $category_id, $capacity, $image]);
+    $latitude = !empty($_POST['latitude']) ? $_POST['latitude'] : null;
+    $longitude = !empty($_POST['longitude']) ? $_POST['longitude'] : null;
+
+    $stmt = $pdo->prepare('INSERT INTO rooms (name, code, category_id, capacity, image, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?)');
+    $stmt->execute([$name, $code, $category_id, $capacity, $image, $latitude, $longitude]);
     
     $_SESSION['flash']['success'] = 'Ruangan ' . e($name) . ' berhasil ditambahkan';
     header('Location: index.php');
@@ -304,6 +311,12 @@ function displayEditForm($id) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Edit Ruangan</title>
         <link rel="stylesheet" href="../../public/assets/css/style.css">
+        <!-- LeafletJS -->
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+        <style>
+            #map { height: 300px; width: 100%; border-radius: 8px; margin-top: 10px; z-index: 1; }
+        </style>
     </head>
     <body>
         <header>
@@ -355,6 +368,63 @@ function displayEditForm($id) {
                         <?php endif; ?>
                     </div>
                     
+                    <div class="form-group">
+                        <div class="d-flex justify-between align-center">
+                            <label class="form-label">Lokasi (Klik pada peta)</label>
+                            <button type="button" id="btn-location" class="btn btn-outline btn-sm" style="padding: 2px 8px; font-size: 0.8rem;">📍 Gunakan Lokasi Saya</button>
+                        </div>
+                        <div id="map"></div>
+                        <input type="hidden" name="latitude" id="latitude" value="<?= e($room['latitude'] ?? '') ?>">
+                        <input type="hidden" name="longitude" id="longitude" value="<?= e($room['longitude'] ?? '') ?>">
+                        <p class="text-small text-muted">Koordinat: <span id="coords"><?= ($room['latitude'] && $room['longitude']) ? e($room['latitude']) . ', ' . e($room['longitude']) : 'Belum dipilih' ?></span></p>
+                    </div>
+
+                    <script>
+                        document.addEventListener("DOMContentLoaded", function() {
+                            var lat = <?= $room['latitude'] ? $room['latitude'] : '-6.175392' ?>;
+                            var lng = <?= $room['longitude'] ? $room['longitude'] : '106.827153' ?>;
+                            var map = L.map('map').setView([lat, lng], 15);
+
+                            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                maxZoom: 19,
+                                attribution: '&copy; OpenStreetMap'
+                            }).addTo(map);
+
+                            var marker;
+                            <?php if ($room['latitude'] && $room['longitude']): ?>
+                                marker = L.marker([lat, lng]).addTo(map);
+                            <?php endif; ?>
+
+                            map.on('click', function(e) {
+                                updateLocation(e.latlng.lat, e.latlng.lng);
+                            });
+
+                            document.getElementById('btn-location').addEventListener('click', function() {
+                                if (navigator.geolocation) {
+                                    navigator.geolocation.getCurrentPosition(function(position) {
+                                        updateLocation(position.coords.latitude, position.coords.longitude);
+                                        map.setView([position.coords.latitude, position.coords.longitude], 16);
+                                    }, function(error) {
+                                        alert("Gagal mendapatkan lokasi: " + error.message);
+                                    });
+                                } else {
+                                    alert("Browser Anda tidak mendukung Geolocation.");
+                                }
+                            });
+
+                            function updateLocation(lat, lng) {
+                                if (marker) {
+                                    marker.setLatLng([lat, lng]);
+                                } else {
+                                    marker = L.marker([lat, lng]).addTo(map);
+                                }
+                                document.getElementById('latitude').value = lat;
+                                document.getElementById('longitude').value = lng;
+                                document.getElementById('coords').innerText = lat.toFixed(6) + ', ' + lng.toFixed(6);
+                            }
+                        });
+                    </script>
+
                     <div class="form-actions">
                         <button type="submit" class="btn">Simpan Perubahan</button>
                         <a href="index.php" class="btn btn-secondary">Batal</a>
@@ -380,6 +450,12 @@ function displayCreateForm() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Tambah Ruangan</title>
         <link rel="stylesheet" href="../../public/assets/css/style.css">
+        <!-- LeafletJS -->
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+        <style>
+            #map { height: 300px; width: 100%; border-radius: 8px; margin-top: 10px; z-index: 1; }
+        </style>
     </head>
     <body>
         <header>
@@ -421,6 +497,58 @@ function displayCreateForm() {
                         <input type="file" name="image" class="form-control" accept="image/*">
                     </div>
                     
+                    <div class="form-group">
+                        <div class="d-flex justify-between align-center">
+                            <label class="form-label">Lokasi (Klik pada peta)</label>
+                            <button type="button" id="btn-location" class="btn btn-outline btn-sm" style="padding: 2px 8px; font-size: 0.8rem;">📍 Gunakan Lokasi Saya</button>
+                        </div>
+                        <div id="map"></div>
+                        <input type="hidden" name="latitude" id="latitude">
+                        <input type="hidden" name="longitude" id="longitude">
+                        <p class="text-small text-muted">Koordinat: <span id="coords">Belum dipilih</span></p>
+                    </div>
+
+                    <script>
+                        document.addEventListener("DOMContentLoaded", function() {
+                            var map = L.map('map').setView([-6.175392, 106.827153], 15);
+
+                            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                maxZoom: 19,
+                                attribution: '&copy; OpenStreetMap'
+                            }).addTo(map);
+
+                            var marker;
+
+                            map.on('click', function(e) {
+                                updateLocation(e.latlng.lat, e.latlng.lng);
+                            });
+
+                            document.getElementById('btn-location').addEventListener('click', function() {
+                                if (navigator.geolocation) {
+                                    navigator.geolocation.getCurrentPosition(function(position) {
+                                        updateLocation(position.coords.latitude, position.coords.longitude);
+                                        map.setView([position.coords.latitude, position.coords.longitude], 16);
+                                    }, function(error) {
+                                        alert("Gagal mendapatkan lokasi: " + error.message);
+                                    });
+                                } else {
+                                    alert("Browser Anda tidak mendukung Geolocation.");
+                                }
+                            });
+
+                            function updateLocation(lat, lng) {
+                                if (marker) {
+                                    marker.setLatLng([lat, lng]);
+                                } else {
+                                    marker = L.marker([lat, lng]).addTo(map);
+                                }
+                                document.getElementById('latitude').value = lat;
+                                document.getElementById('longitude').value = lng;
+                                document.getElementById('coords').innerText = lat.toFixed(6) + ', ' + lng.toFixed(6);
+                            }
+                        });
+                    </script>
+
                     <div class="form-actions">
                         <button type="submit" class="btn">Simpan</button>
                         <a href="index.php" class="btn btn-secondary">Batal</a>
@@ -459,3 +587,4 @@ function handleImageUpload($file) {
     return null;
 }
 ?>
+}

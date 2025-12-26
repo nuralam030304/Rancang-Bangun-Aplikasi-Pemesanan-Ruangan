@@ -66,6 +66,12 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Beranda - Sistem Booking Ruangan</title>
     <link rel="stylesheet" href="./assets/css/style.css">
+    <!-- LeafletJS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <style>
+        #map { height: 400px; width: 100%; border-radius: 12px; margin-top: 20px; z-index: 1; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    </style>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             // Auto-hide notification
@@ -243,6 +249,29 @@ try {
                 </div>
             </div>
         <?php endif; ?>
+
+        <!-- Location Section -->
+        <section class="location-section" style="margin-top: 50px; margin-bottom: 30px;">
+            <h3 style="text-align: center; margin-bottom: 20px; color: #333;">📍 Lokasi Kami</h3>
+            <div class="card">
+                <div id="map"></div>
+            </div>
+            <script>
+                document.addEventListener("DOMContentLoaded", function() {
+                    // Initialize Map (Default: Monas, Jakarta)
+                    // Koordinat bisa diubah sesuai lokasi sebenarnya
+                    var map = L.map('map').setView([-6.175392, 106.827153], 15);
+
+                    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 19,
+                        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    }).addTo(map);
+
+                    var marker = L.marker([-6.175392, 106.827153]).addTo(map);
+                    marker.bindPopup("<b>Gedung Booking Ruangan</b><br>Jl. Medan Merdeka Barat No. 12<br>Jakarta Pusat").openPopup();
+                });
+            </script>
+        </section>
 
         <footer style="margin-top: 50px;">
             <p>© <?= date('Y'); ?> Sistem Booking Ruangan - Dibuat dengan ❤️ oleh Mahruf</p>
